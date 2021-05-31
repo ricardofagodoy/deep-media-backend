@@ -1,5 +1,7 @@
 #!/bin/bash
 
-export GOOGLE_APPLICATION_CREDENTIALS="service-account-file.json"
+# Define local environment variables
+source env.sh
 
-python src/app.py
+echo "Starting app..."
+python src/main.py

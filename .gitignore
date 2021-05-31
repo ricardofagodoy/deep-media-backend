@@ -1,2 +1,4 @@
 service-account-file.json
+env.sh
 venv
+__pycache__
