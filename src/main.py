@@ -5,7 +5,7 @@ from firebase_admin import auth
 from flask import Flask
 from flask_expects_json import expects_json
 from flask import request, jsonify, g
-from connectors.google.google_ads_connector import GoogleAdsConnector
+from connectors.google.google_connector import GoogleConnector
 from repository.DatastoreRepository import DatastoreRepository as Repository
 from services.connector_service import ConnectorService
 
@@ -53,14 +53,13 @@ def performance():
     'required': ['type', 'configuration']
 })
 def connectors_post():
-
     connector_json = request.json
 
     _connector_service.configure_connector(connector_json['type'], connector_json['configuration'], g.uid)
 
     return {
-        'status': 'OK'
-    }, 200
+               'status': 'OK'
+           }, 200
 
 
 @app.route("/connectors")
@@ -70,12 +69,39 @@ def connectors():
 
 @app.route("/connectors/<connector_type>")
 def connector_options(connector_type):
-    return _connector_service.get_connector_options(connector_type, g.uid)
+    return {
+        "ads_accounts": {
+            "3013036305": [],
+            "4413234797": [
+                "Website traffic-Search-1"
+            ]
+        },
+        "ga_accounts": {
+            "111207543": {
+                "UA-111207543-1": [
+                    1,
+                    2
+                ]
+            },
+            "187669733": {},
+            "188017198": {},
+            "76876633": {
+                "UA-76876633-1": [],
+                "UA-76876633-2": [],
+                "UA-76876633-3": [],
+                "UA-76876633-4": [],
+                "UA-76876633-5": [],
+                "UA-76876633-6": []
+            }
+        }
+    }
+
+    # return _connector_service.get_connector_options(connector_type, g.uid)
 
 
 @app.route("/configurations")
 def configurations():
-    return jsonify([])
+    return jsonify(_connector_service.get_configurations(g.uid))
 
 
 @app.route("/configurations", methods=['POST'])
@@ -103,28 +129,25 @@ def configurations():
     ]
 })
 def configurations_post():
-    print(request.json)
-    return jsonify([request.json])
+    return _connector_service.set_configuration(request.json, g.uid)
 
 
 @app.before_request
 def token_id_interceptor():
-
     try:
         g.uid = auth.verify_id_token(request.headers['Authorization'])['uid']
     except Exception:
         return {
-            'status': '401 - Not Authorized'
-        }, 401
+                   'status': '401 - Not Authorized'
+               }, 401
 
 
 if __name__ == "__main__":
-
     # Repository to persist everything
     repository = Repository()
 
     # Google Connector
-    google_connector = GoogleAdsConnector(
+    google_connector = GoogleConnector(
         os.environ.get('GOOGLE_CLIENT_ID'),
         os.environ.get('GOOGLE_CLIENT_SECRET'),
         os.environ.get('GOOGLE_DEVELOPER_TOKEN'))

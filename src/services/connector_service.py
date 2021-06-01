@@ -27,5 +27,11 @@ class ConnectorService:
     def get_user_connectors(self, uid):
         return self.repository.load_connectors(uid)
 
+    def set_configuration(self, configuration, uid):
+        return self.repository.persist_configuration(configuration, uid)
+
+    def get_configurations(self, uid):
+        return self.repository.load_configurations(uid)
+
     def __get_connector_by_type(self, connector_type) -> BaseConnector:
         return self.connectors[connector_type]

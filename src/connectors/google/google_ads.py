@@ -1,69 +1,33 @@
 from typing import Dict
+
 from google.ads.googleads.client import GoogleAdsClient
-from oauth2client.client import credentials_from_code
-from connectors.base_connector import BaseConnector
 
 
-class GoogleAdsConnector(BaseConnector):
-
-    TYPE = 'google'
-    SCOPES = ['https://www.googleapis.com/auth/adwords', 'https://www.googleapis.com/auth/analytics.readonly']
-
-    def __init__(self, client_id, client_secret, developer_token):
-        self.credentials_dict = {
-            'client_id': client_id,
-            'client_secret': client_secret,
-            'developer_token': developer_token
-        }
-
-    @property
-    def type(self):
-        return GoogleAdsConnector.TYPE
-
-    def build_connector(self, connector_configuration):
-
-        credentials = credentials_from_code(
-            client_id=self.credentials_dict['client_id'],
-            client_secret=self.credentials_dict['client_secret'],
-            scope=GoogleAdsConnector.SCOPES,
-            code=connector_configuration['authorization_code'])
-
-        return {'refresh_token': credentials.refresh_token}
-
-    def load_options(self, connector_configuration):
-
-        client = GoogleAdsClient.load_from_dict({
-            **self.credentials_dict,
-            'refresh_token': connector_configuration['refresh_token']
-        })
-
-        # Load all accounts
-        ads_campaigns = self.__load_ads_accounts(client)
-
-        # Load all campaigns for all accounts
-        accounts_campaigns = self.__load_ads_campaigns(client, ads_campaigns)
-
-        return {
-            'ads_accounts': accounts_campaigns,
-            'ga_accounts': {
-                'GA Account 1': {
-                    'Property 1': ['metric1', 'metric2']
-                }
-            }
-        }
+class GoogleAds:
 
     @staticmethod
-    def __load_ads_campaigns(client, accounts):
+    def load_ads_properties(credentials):
+
+        client = GoogleAdsClient.load_from_dict(credentials)
+
+        # Load all Google Ads accounts
+        ads_campaigns = GoogleAds.load_ads_accounts(client)
+
+        # Load all campaigns for all accounts
+        return GoogleAds.load_ads_campaigns(client, ads_campaigns)
+
+    @staticmethod
+    def load_ads_campaigns(client, accounts):
 
         accounts_campaigns = dict()
 
         query = """
-                SELECT
-                    campaign.id,
-                    campaign.name
-                FROM campaign
-                ORDER BY campaign.id
-            """
+                    SELECT
+                        campaign.id,
+                        campaign.name
+                    FROM campaign
+                    ORDER BY campaign.id
+                """
 
         for manager_id, accounts in accounts.items():
 
@@ -84,7 +48,7 @@ class GoogleAdsConnector(BaseConnector):
         return accounts_campaigns
 
     @staticmethod
-    def __load_ads_accounts(client) -> Dict[int, list]:
+    def load_ads_accounts(client) -> Dict[int, list]:
 
         # Gets instances of the GoogleAdsService and CustomerService clients.
         googleads_service = client.get_service("GoogleAdsService")
@@ -96,16 +60,16 @@ class GoogleAdsConnector(BaseConnector):
         # Creates a query that retrieves all child accounts of the manager
         # specified in search calls below.
         query = """
-                    SELECT
-                      customer_client.client_customer,
-                      customer_client.level,
-                      customer_client.manager,
-                      customer_client.descriptive_name,
-                      customer_client.currency_code,
-                      customer_client.time_zone,
-                      customer_client.id
-                    FROM customer_client
-                    WHERE customer_client.level <= 1"""
+                        SELECT
+                          customer_client.client_customer,
+                          customer_client.level,
+                          customer_client.manager,
+                          customer_client.descriptive_name,
+                          customer_client.currency_code,
+                          customer_client.time_zone,
+                          customer_client.id
+                        FROM customer_client
+                        WHERE customer_client.level <= 1"""
 
         customer_resource_names = (
             customer_service.list_accessible_customers().resource_names

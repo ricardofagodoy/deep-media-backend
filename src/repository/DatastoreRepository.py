@@ -1,3 +1,4 @@
+import uuid
 from google.cloud import datastore
 
 _OPTIMIZATIONS_STORE = 'optimizations'
@@ -29,14 +30,30 @@ class DatastoreRepository:
     def load_connector(self, connector_type, uid):
         return self.client.get(self.client.key('User', uid, _CONNECTORS_STORE, connector_type))
 
+    def persist_configuration(self, configuration, uid):
+
+        # New configuration
+        if not configuration.get('id'):
+            configuration['id'] = uuid.uuid4().hex
+
+        entity = datastore.Entity(self.client.key('User', uid, _CONFIGURATION_STORE, configuration['id']))
+        entity.update(configuration)
+
+        self.client.put(entity)
+
+        return configuration
+
+    def load_configurations(self, uid):
+        query = self.client.query(ancestor=self.client.key('User', uid), kind=_CONFIGURATION_STORE)
+
+        response = [conf for conf in query.fetch()]
+
+        return response
+
     '''
     def persist_configuration(self, configuration):
 
-        if configuration['id']:
-            configuration_cache = [c for c in DatastoreRepository.configuration_cache if c['id'] != configuration['id']].append(configuration)
-        else:
-            configuration['id'] = len(DatastoreRepository.configuration_cache) + 1
-            DatastoreRepository.configuration_cache.append(configuration)
+        
 
     def load_configuration(self):
         return DatastoreRepository.connectors_cache
