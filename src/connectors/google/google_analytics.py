@@ -7,7 +7,7 @@ class GoogleAnalytics:
     @staticmethod
     def load_accounts_properties(credentials):
 
-        analytics_properties = dict()
+        analytics_properties = {}
 
         # Construct service
         service = build('analytics', 'v3', credentials=Credentials(
@@ -23,19 +23,22 @@ class GoogleAnalytics:
             for account in accounts.get('items'):
 
                 account_id = account.get('id')
+                properties_map = dict()
 
                 # To store response
-                properties_map = dict()
-                analytics_properties[account_id] = properties_map
+                analytics_properties[account_id] = {
+                    'name': account.get('name'),
+                    'properties': properties_map
+                }
 
                 # Get a list of all the properties for the account
                 properties = service.management().webproperties().list(
                     accountId=account_id).execute()
 
                 if properties.get('items'):
-                    for property in properties.get('items'):
+                    for web_property in properties.get('items'):
 
-                        property_id = property.get('id')
+                        property_id = web_property.get('id')
 
                         # To store response
                         custom_metrics_list = []
@@ -47,6 +50,11 @@ class GoogleAnalytics:
                             webPropertyId=property_id).execute()
 
                         if custom_metrics.get('items'):
-                            custom_metrics_list.extend([e.get('index') for e in custom_metrics.get('items')])
+                            custom_metrics_list.extend([
+                                {
+                                    'index': e.get('index'),
+                                    'name': e.get('name')
+                                } for e in custom_metrics.get('items')
+                            ])
 
         return analytics_properties

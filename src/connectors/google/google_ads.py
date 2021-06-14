@@ -39,11 +39,11 @@ class GoogleAds:
             for account in accounts:
                 response = googleads_service.search_stream(customer_id=str(account), query=query)
 
-                accounts_campaigns[account] = []
+                accounts_campaigns[str(account)] = []
 
                 for batch in response:
                     for row in batch.results:
-                        accounts_campaigns[account].append(row.campaign.name)
+                        accounts_campaigns[str(account)].append(row.campaign.name)
 
         return accounts_campaigns
 

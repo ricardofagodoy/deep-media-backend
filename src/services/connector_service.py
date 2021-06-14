@@ -1,37 +1,93 @@
-from typing import List
+from typing import List, Any
 from connectors.base_connector import BaseConnector
-from repository.DatastoreRepository import DatastoreRepository
+from models.configuration import Configuration
+from models.connector import Connector
+from models.optimization import Optimization
+from repository.job_repository import JobRepository
+from repository.store_repository import StoreRepository
 
 
 class ConnectorService:
 
-    def __init__(self, repository: DatastoreRepository, connectors: List[BaseConnector]):
+    def __init__(self, repository: StoreRepository, job_repository: JobRepository, connectors: List[BaseConnector]):
         self.repository = repository
+        self.job_repository = job_repository
         self.connectors = {conn.type: conn for conn in connectors}
 
-    def get_connector_options(self, connector_type, uid):
+    def get_connector_options(self, connector_type, uid) -> Any:
 
-        connector_configuration = self.repository.load_connector(connector_type, uid)
+        connector = self.repository.load_connector(connector_type, uid)
 
-        if not connector_configuration:
-            return {}
+        if not connector:
+            raise Exception('Connector %s not configured' % connector_type)
 
-        return self.__get_connector_by_type(connector_type).load_options(connector_configuration)
+        return connector.options
 
-    def configure_connector(self, connector_type, configuration, uid):
+    def delete_connector(self, connector_type, uid) -> Any:
 
-        connector_configuration = self.__get_connector_by_type(connector_type).build_connector(configuration)
+        # Delete job scheduled for this connector
+        self.job_repository.delete_scheduled_optimization(connector_type, uid)
 
-        return self.repository.persist_connector(connector_type, connector_configuration, uid)
+        # Wipe all connector settings
+        self.repository.delete_connector(connector_type, uid)
 
-    def get_user_connectors(self, uid):
+        # Finally, remove all configurations related to this connector
+        configurations = self.repository.load_configurations(uid)
+
+        for configuration in configurations:
+            if configuration.type == connector_type:
+                self.repository.delete_configuration(configuration.id, uid)
+
+    def refresh_connector(self, connector_type, uid):
+
+        connector_handler = self.connectors.get(connector_type)
+
+        if not connector_handler:
+            raise Exception('Connector %s not available' % connector_type)
+
+        connector = self.repository.load_connector(connector_type, uid)
+
+        if not connector:
+            raise Exception('Connector %s not configured' % connector_type)
+
+        # Update options
+        connector.options = connector_handler.load_options(connector.configuration)
+
+        self.repository.persist_connector(connector, uid)
+
+    def configure_connector(self, connector_type, connector_configuration, uid) -> Connector:
+
+        connector_handler = self.connectors.get(connector_type)
+
+        if not connector_handler:
+            raise Exception('Connector %s not available' % connector_type)
+
+        # Build connector
+        connector = connector_handler.build_connector(connector_configuration)
+
+        # Create job to perform optimizations
+        self.job_repository.schedule_optimization(connector_type, uid)
+
+        return self.repository.persist_connector(connector, uid)
+
+    def get_user_connectors(self, uid) -> List[str]:
         return self.repository.load_connectors(uid)
 
-    def set_configuration(self, configuration, uid):
+    def set_configuration(self, configuration: Configuration, uid) -> Configuration:
         return self.repository.persist_configuration(configuration, uid)
 
-    def get_configurations(self, uid):
+    def delete_configuration(self, configuration_id, uid):
+        return self.repository.delete_configuration(configuration_id, uid)
+
+    def get_configurations(self, uid) -> List[Configuration]:
         return self.repository.load_configurations(uid)
 
-    def __get_connector_by_type(self, connector_type) -> BaseConnector:
-        return self.connectors[connector_type]
+    def get_optimizations(self, uid) -> List[Optimization]:
+        return self.repository.load_optimizations(uid)
+
+    def get_future_optimizations(self, uid):
+        jobs = self.job_repository.get_scheduled_optimizations(uid)
+        return [{
+            'next_run': job['next_run'],
+            'type': job['type']
+        } for job in jobs if job['uid'] == uid]

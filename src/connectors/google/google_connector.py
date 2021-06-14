@@ -2,6 +2,7 @@ from oauth2client.client import credentials_from_code
 from connectors.base_connector import BaseConnector
 from connectors.google.google_ads import GoogleAds
 from connectors.google.google_analytics import GoogleAnalytics
+from models.connector import Connector
 
 
 class GoogleConnector(BaseConnector):
@@ -27,11 +28,39 @@ class GoogleConnector(BaseConnector):
             scope=GoogleConnector.SCOPES,
             code=connector_configuration['authorization_code'])
 
-        return {'refresh_token': credentials.refresh_token}
+        configuration = {'refresh_token': credentials.refresh_token}
+        options = self.load_options(configuration)
+
+        return Connector(self.type, configuration, options)
 
     def load_options(self, connector_configuration):
+        """
+        Load all options fetched using this connector configurations.
 
-        # Load all Google Ads acocunts and campaigns
+        :returns Dictionary in the following format:
+
+        {
+            "ads_accounts": {
+                "3013036305": [],
+                "4413234797": [
+                    "Website traffic-Search-1"
+                ]
+            },
+            "ga_accounts": [{
+                "111207543": {
+                    'name': 'abc123',
+                    'properties': {
+                        "UA-111207543-1": [
+                            { 'index': 1, 'name': 'abc' }
+                            { 'index': 2, 'name': 'def' }
+                        ]
+                    }
+                }
+            }]
+        }
+        """
+
+        # Load all Google Ads accounts and campaigns
         ads_properties = GoogleAds.load_ads_properties({
             'client_id': self.client_id,
             'client_secret': self.client_secret,
@@ -50,4 +79,3 @@ class GoogleConnector(BaseConnector):
             'ads_accounts': ads_properties,
             'ga_accounts': analytics_properties
         }
-
