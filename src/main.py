@@ -14,12 +14,34 @@ from services.connector_service import ConnectorService
 
 # Flask and Firebase apps initialization
 app = Flask(__name__)
-
 firebase_admin.initialize_app()
+
 logging.basicConfig(level=logging.INFO)
 
-# Services to handle requests
-global _connector_service
+# Repository to persist everything
+repository = Repository()
+
+# Repository to take care of jobs
+job_repository = JobRepository(
+    os.environ.get('PROJECT_ID'),
+    os.environ.get('LOCATION_ID'),
+    os.environ.get('TIMEZONE'),
+    os.environ.get('OPTIMIZERS_TOPIC'),
+    os.environ.get('OPTIMIZERS_CRON')
+)
+
+# Google Connector
+google_connector = GoogleConnector(
+    os.environ.get('GOOGLE_CLIENT_ID'),
+    os.environ.get('GOOGLE_CLIENT_SECRET'),
+    os.environ.get('GOOGLE_DEVELOPER_TOKEN'))
+
+connectors = [google_connector]
+
+# Connectors modules
+_connector_service = ConnectorService(repository,
+                                      job_repository,
+                                      connectors)
 
 
 @app.route("/performance")
@@ -134,13 +156,11 @@ def configurations_post():
 
 @app.before_request
 def token_id_interceptor():
-
-    try:
-        g.uid = auth.verify_id_token(request.headers['Authorization'])['uid']
-    except Exception:
-        return {
-                   'status': '401 - Not Authorized'
-               }, 401
+    if request.method in ['POST', 'GET', 'DELETE', 'PATCH', 'PUT']:
+        try:
+            g.uid = auth.verify_id_token(request.headers['Authorization'])['uid']
+        except Exception:
+            return {'status': '401 - Not Authorized'}, 401
 
 
 @app.after_request
@@ -152,30 +172,4 @@ def after_request(response):
 
 
 if __name__ == "__main__":
-    # Repository to persist everything
-    repository = Repository()
-
-    # Repository to take care of jobs
-    job_repository = JobRepository(
-        os.environ.get('PROJECT_ID'),
-        os.environ.get('LOCATION_ID'),
-        os.environ.get('TIMEZONE'),
-        os.environ.get('OPTIMIZERS_TOPIC'),
-        os.environ.get('OPTIMIZERS_CRON')
-    )
-
-    # Google Connector
-    google_connector = GoogleConnector(
-        os.environ.get('GOOGLE_CLIENT_ID'),
-        os.environ.get('GOOGLE_CLIENT_SECRET'),
-        os.environ.get('GOOGLE_DEVELOPER_TOKEN'))
-
-    connectors = [google_connector]
-
-    # Connectors modules
-    _connector_service = ConnectorService(repository,
-                                          job_repository,
-                                          connectors)
-
-    # Start web server
     app.run()
