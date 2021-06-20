@@ -68,7 +68,7 @@ def connectors():
 
 
 @app.route("/health")
-def connectors():
+def health():
     return {'status': 'OK'}, 200
 
 
