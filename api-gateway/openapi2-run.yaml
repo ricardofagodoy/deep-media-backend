@@ -1,7 +1,7 @@
 # openapi2-run.yaml
 swagger: '2.0'
 info:
-  title: backend
+  title: backend-api
   description: Deep Media Backend public APIs
   version: 1.0.0
 schemes:
@@ -11,25 +11,10 @@ produces:
 x-google-backend:
   address: https://deep-media-backend-evur3nagma-rj.a.run.app
 paths:
-   /assets/{asset}:
-    get:
-      parameters:
-        - in: path
-          name: asset
-          type: string
-          required: true
-          description: Name of the asset.
-      summary: Assets
-      operationId: getAsset
-      responses:
-        '200':
-          description: A successful response
-          schema:
-            type: string
-    /hello:
+    /health:
       get:
-        summary: Cloud Run hello world
-        operationId: hello
+        summary: Health Check
+        operationId: health
         responses:
           '200':
             description: A successful response

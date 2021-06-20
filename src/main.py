@@ -13,9 +13,8 @@ from repository.scheduler.SchedulerRepository import SchedulerRepository as JobR
 from services.connector_service import ConnectorService
 
 # Flask and Firebase apps initialization
-from services.optimizer_service import OptimizerService
-
 app = Flask(__name__)
+
 firebase_admin.initialize_app()
 logging.basicConfig(level=logging.INFO)
 
@@ -136,16 +135,20 @@ def configurations_post():
 @app.before_request
 def token_id_interceptor():
 
-    # Optimizers (exclude in the future)
-    if request.endpoint == 'optimize':
-        return
-
     try:
         g.uid = auth.verify_id_token(request.headers['Authorization'])['uid']
     except Exception:
         return {
                    'status': '401 - Not Authorized'
                }, 401
+
+
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE')
+    return response
 
 
 if __name__ == "__main__":
@@ -173,8 +176,6 @@ if __name__ == "__main__":
     _connector_service = ConnectorService(repository,
                                           job_repository,
                                           connectors)
-
-    _optimization_service = OptimizerService(repository, connectors)
 
     # Start web server
     app.run()
