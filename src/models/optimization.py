@@ -4,15 +4,15 @@ from datetime import datetime
 
 @dataclass
 class Optimization:
+    connector: str
+    campaign: str
+    target: float
+    margin: float
+    ad_cost: float
+    optimize: str
+    before: float
+    after: float
     id: str = None
-    connector: str = ''
-    campaign: str = ''
-    target: float = 0
-    margin: float = 0
-    ad_cost: float = 0
-    optimize: str = ''
-    before: float = 0
-    after: float = 0
     date: datetime = datetime.now()
 
     def to_dict(self):

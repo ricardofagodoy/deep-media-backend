@@ -1,3 +1,4 @@
+from datetime import datetime
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
@@ -58,3 +59,16 @@ class GoogleAnalytics:
                             ])
 
         return analytics_properties
+
+    @staticmethod
+    def load_sales(credentials, account: str, property_name: str, metric: str,
+                   start_date: datetime, end_date: datetime):
+
+        # Construct service
+        service = build('analytics', 'v3', credentials=Credentials(
+            **credentials,
+            token_uri='https://oauth2.googleapis.com/token',
+            token=''
+        ))
+
+        return 1300.0

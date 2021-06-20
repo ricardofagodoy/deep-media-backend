@@ -61,6 +61,16 @@ class DatastoreRepository(StoreRepository):
     def delete_configuration(self, configuration_id, uid):
         self.client.delete(self.client.key('User', uid, _CONFIGURATION_STORE, configuration_id))
 
+    def persist_optimization(self, optimization: Optimization, uid):
+
+        if not optimization.id:
+            optimization.id = uuid.uuid4().hex
+
+        entity = datastore.Entity(self.client.key('User', uid, _OPTIMIZATIONS_STORE, optimization.id))
+        entity.update(optimization.to_dict())
+
+        self.client.put(entity)
+
     def load_optimizations(self, uid, limit=60) -> List[Optimization]:
         query = self.client.query(ancestor=self.client.key('User', uid), kind=_OPTIMIZATIONS_STORE)
         query.order = ["-date"]

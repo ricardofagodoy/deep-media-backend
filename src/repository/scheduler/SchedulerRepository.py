@@ -8,16 +8,16 @@ from repository.job_repository import JobRepository
 
 class SchedulerRepository(JobRepository):
 
-    def __init__(self, project_id, location_id, timezone, service_account_email, optimizers_endpoint, cron):
+    def __init__(self, project_id: str, location_id: str, timezone: str, optimizers_topic: str, cron: str):
 
-        if not all([project_id, location_id, timezone, service_account_email, optimizers_endpoint, cron]):
+        if not all([project_id, location_id, timezone, optimizers_topic, cron]):
             raise Exception('Invalid scheduler configuration.')
 
         self.timezone = timezone
-        self.service_account_email = service_account_email
-        self.optimizers_endpoint = optimizers_endpoint
         self.cron = cron
+        self.optimizers_topic = f"projects/{project_id}/topics/" + optimizers_topic
         self.parent = f"projects/{project_id}/locations/{location_id}"
+
         self.client = scheduler.CloudSchedulerClient()
 
     def get_scheduled_optimizations(self, uid):
@@ -37,19 +37,12 @@ class SchedulerRepository(JobRepository):
 
         job = {
             'name': self.__build_name(uid, connector_type),
-            'http_target': {
-                'uri': self.optimizers_endpoint,
-                'http_method': 1,
-                "headers": {
-                    "Content-type": "application/json",
-                },
-                'body': json.dumps({
+            'pubsubTarget': {
+                'topicName': self.optimizers_topic,
+                'data': json.dumps({
                     'uid': uid,
                     'type': connector_type
-                }).encode('utf-8'),
-                "oidc_token": {
-                    "service_account_email": self.service_account_email
-                },
+                }).encode('utf-8')
             },
             'schedule': self.cron,
             'time_zone': self.timezone

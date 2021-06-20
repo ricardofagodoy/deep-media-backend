@@ -13,6 +13,8 @@ from repository.scheduler.SchedulerRepository import SchedulerRepository as JobR
 from services.connector_service import ConnectorService
 
 # Flask and Firebase apps initialization
+from services.optimizer_service import OptimizerService
+
 app = Flask(__name__)
 firebase_admin.initialize_app()
 logging.basicConfig(level=logging.INFO)
@@ -63,6 +65,11 @@ def connectors_post():
 @app.route("/connectors")
 def connectors():
     return jsonify(_connector_service.get_user_connectors(g.uid))
+
+
+@app.route("/health")
+def connectors():
+    return {'status': 'OK'}, 200
 
 
 @app.route("/connectors/<connector_type>")
@@ -128,6 +135,11 @@ def configurations_post():
 
 @app.before_request
 def token_id_interceptor():
+
+    # Optimizers (exclude in the future)
+    if request.endpoint == 'optimize':
+        return
+
     try:
         g.uid = auth.verify_id_token(request.headers['Authorization'])['uid']
     except Exception:
@@ -145,8 +157,7 @@ if __name__ == "__main__":
         os.environ.get('PROJECT_ID'),
         os.environ.get('LOCATION_ID'),
         os.environ.get('TIMEZONE'),
-        os.environ.get('SERVICE_ACCOUNT_EMAIL'),
-        os.environ.get('OPTIMIZERS_ENDPOINT'),
+        os.environ.get('OPTIMIZERS_TOPIC'),
         os.environ.get('OPTIMIZERS_CRON')
     )
 
@@ -156,11 +167,14 @@ if __name__ == "__main__":
         os.environ.get('GOOGLE_CLIENT_SECRET'),
         os.environ.get('GOOGLE_DEVELOPER_TOKEN'))
 
+    connectors = [google_connector]
+
     # Connectors modules
     _connector_service = ConnectorService(repository,
-                                          job_repository, [
-                                              google_connector
-                                          ])
+                                          job_repository,
+                                          connectors)
+
+    _optimization_service = OptimizerService(repository, connectors)
 
     # Start web server
     app.run()

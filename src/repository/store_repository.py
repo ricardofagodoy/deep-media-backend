@@ -39,3 +39,7 @@ class StoreRepository(ABC):
     @abstractmethod
     def load_optimizations(self, uid, limit=None) -> List[Optimization]:
         raise NotImplementedError()
+
+    @abstractmethod
+    def persist_optimization(self, optimization: Optimization, uid):
+        raise NotImplementedError()

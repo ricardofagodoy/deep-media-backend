@@ -1,5 +1,5 @@
+from datetime import datetime
 from typing import Dict
-
 from google.ads.googleads.client import GoogleAdsClient
 
 
@@ -132,3 +132,10 @@ class GoogleAds:
                             unprocessed_customer_ids.append(customer_client.id)
 
             return customer_ids_to_child_accounts
+
+    @staticmethod
+    def load_cost(credentials, account: str, campaign_name: str, start_date: datetime, end_date: datetime):
+
+        client = GoogleAdsClient.load_from_dict(credentials)
+
+        return 100.0
