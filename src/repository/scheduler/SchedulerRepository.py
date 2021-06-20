@@ -30,15 +30,15 @@ class SchedulerRepository(JobRepository):
 
         return [{
             'next_run': job.schedule_time.astimezone(timezone('America/Sao_Paulo')).strftime('%d/%m/%Y %H:%M'),
-            **json.loads(job.http_target.body)
+            **json.loads(job.pubsub_target.data)
         } for job in jobs]
 
     def schedule_optimization(self, connector_type: str, uid):
 
         job = {
             'name': self.__build_name(uid, connector_type),
-            'pubsubTarget': {
-                'topicName': self.optimizers_topic,
+            'pubsub_target': {
+                'topic_name': self.optimizers_topic,
                 'data': json.dumps({
                     'uid': uid,
                     'type': connector_type
