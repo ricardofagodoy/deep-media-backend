@@ -1,10 +1,7 @@
-from datetime import datetime
-
 from oauth2client.client import credentials_from_code
 from connectors.base_connector import BaseConnector
 from connectors.google.google_ads import GoogleAds
 from connectors.google.google_analytics import GoogleAnalytics
-from models.configuration import Configuration
 from models.connector import Connector
 
 
@@ -80,35 +77,3 @@ class GoogleConnector(BaseConnector):
             'ads_accounts': ads_properties,
             'ga_accounts': analytics_properties
         }
-
-    def load_adcost(self, connector_configuration, configuration: Configuration, start_date: datetime, end_date=None):
-
-        if not end_date:
-            end_date = start_date
-
-        # Pull cost for campaign
-        ads_cost = GoogleAds.load_cost({
-            'client_id': self.client_id,
-            'client_secret': self.client_secret,
-            'developer_token': self.developer_token,
-            'refresh_token': connector_configuration['refresh_token']
-        },
-            configuration.ads_campaign,
-            configuration.ads_account,
-            start_date,
-            end_date)
-
-        # Pull sales from analytics
-        ga_sales = GoogleAnalytics.load_sales({
-            'client_id': self.client_id,
-            'client_secret': self.client_secret,
-            'refresh_token': connector_configuration['refresh_token']
-        },
-            configuration.ga_account,
-            configuration.ga_property,
-            configuration.ga_metric,
-            start_date,
-            end_date
-        )
-
-        return round(ads_cost/ga_sales, 4)
