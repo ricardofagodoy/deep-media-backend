@@ -1,5 +1,4 @@
 import os
-import random
 import logging
 import firebase_admin
 from firebase_admin import auth
@@ -44,14 +43,9 @@ _connector_service = ConnectorService(repository,
                                       connectors)
 
 
-@app.route("/performance")
-def performance():
-    return {
-        'today': random.sample(range(85, 115), 24),
-        'yeserday': random.sample(range(75, 120), 24),
-        'week': random.sample(range(75, 120), 7),
-        'month': random.sample(range(75, 120), 12)
-    }
+@app.route("/performance/<configuration_id>")
+def performance(configuration_id):
+    return _connector_service.get_performance(configuration_id, g.uid)
 
 
 @app.route("/optimizations")
@@ -133,6 +127,7 @@ def configuration_delete(configuration_id):
         'ads_account': {'type': 'string'},
         'ads_campaign': {'type': 'string'},
         'adcost_target': {'type': 'number'},
+        'margin': {'type': 'number'},
         'ga_account': {'type': 'string'},
         'ga_property': {'type': 'string'},
         'ga_metric': {'type': 'string'},
@@ -144,6 +139,7 @@ def configuration_delete(configuration_id):
         'ads_account',
         'ads_campaign',
         'adcost_target',
+        'margin',
         'ga_account',
         'ga_property',
         'ga_metric',

@@ -1,10 +1,14 @@
+from datetime import datetime, timedelta
 from typing import List, Any
+from pytz import timezone
 from connectors.base_connector import BaseConnector
 from models.configuration import Configuration
 from models.connector import Connector
 from models.optimization import Optimization
 from repository.job_repository import JobRepository
 from repository.store_repository import StoreRepository
+
+DEFAULT_TIMEZONE = 'America/Sao_Paulo'
 
 
 class ConnectorService:
@@ -91,3 +95,20 @@ class ConnectorService:
             'next_run': job['next_run'],
             'type': job['type']
         } for job in jobs if job['uid'] == uid]
+
+    def get_performance(self, configuration_id, uid):
+
+        today = datetime.today().astimezone(timezone(DEFAULT_TIMEZONE)).replace(hour=0, minute=0, second=0)
+        yesterday = today - timedelta(days=1)
+
+        optimizations = self.repository.load_optimizations(uid, yesterday, configuration_id=configuration_id)
+
+        # Format today to compare
+        today = Optimization.format_datetime(today)
+
+        return {
+            'today': [o for o in optimizations if o.date >= today],
+            'yeserday': [o for o in optimizations if o.date < today],
+            'week': [],  # Not implemented yet
+            'month': []  # Not implemented yet
+        }

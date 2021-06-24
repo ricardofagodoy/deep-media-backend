@@ -1,3 +1,4 @@
+import datetime
 import uuid
 from typing import List
 from google.cloud import datastore
@@ -61,8 +62,24 @@ class DatastoreRepository(StoreRepository):
     def delete_configuration(self, configuration_id, uid):
         self.client.delete(self.client.key('User', uid, _CONFIGURATION_STORE, configuration_id))
 
-    def load_optimizations(self, uid, limit=60) -> List[Optimization]:
+    def load_optimizations(self,
+                           uid,
+                           start_date=None,
+                           end_date=None,
+                           configuration_id=None,
+                           limit=60) -> List[Optimization]:
+
         query = self.client.query(ancestor=self.client.key('User', uid), kind=_OPTIMIZATIONS_STORE)
+
+        if configuration_id:
+            query.add_filter('campaign_id', '=', configuration_id)
+
+        if start_date:
+            query.add_filter('date', '>=', Optimization.format_datetime(start_date))
+
+        if end_date:
+            query.add_filter('date', '<=', Optimization.format_datetime(end_date))
+
         query.order = ["-date"]
 
         return [Optimization(**optm) for optm in query.fetch(limit=limit)]

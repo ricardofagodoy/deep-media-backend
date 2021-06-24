@@ -3,5 +3,6 @@ indexes:
 - kind: optimizations
   ancestor: yes
   properties:
+  - name: campaign_id
   - name: date
     direction: desc

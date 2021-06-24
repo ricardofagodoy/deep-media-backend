@@ -1,4 +1,5 @@
 from abc import abstractmethod, ABC
+from datetime import datetime
 from typing import List
 
 from models.configuration import Configuration
@@ -37,5 +38,10 @@ class StoreRepository(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def load_optimizations(self, uid, limit=None) -> List[Optimization]:
+    def load_optimizations(self,
+                           uid,
+                           start_date=None,
+                           end_date=None,
+                           configuration_id=None,
+                           limit=None) -> List[Optimization]:
         raise NotImplementedError()

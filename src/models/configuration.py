@@ -8,6 +8,7 @@ class Configuration:
     ads_account: str
     ads_campaign: str
     adcost_target: float
+    margin: float
     ga_account: str
     ga_property: str
     ga_metric: str
@@ -22,6 +23,7 @@ class Configuration:
             'ads_account': self.ads_account,
             'ads_campaign': self.ads_campaign,
             'adcost_target': self.adcost_target,
+            'margin': self.margin,
             'ga_account': self.ga_account,
             'ga_property': self.ga_property,
             'ga_metric': self.ga_metric,
