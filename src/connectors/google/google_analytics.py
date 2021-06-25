@@ -41,8 +41,26 @@ class GoogleAnalytics:
                         property_id = web_property.get('id')
 
                         # To store response
+                        profiles_list = []
                         custom_metrics_list = []
-                        properties_map[property_id] = custom_metrics_list
+
+                        properties_map[property_id] = {
+                            'custom_metrics': custom_metrics_list,
+                            'profiles': profiles_list
+                        }
+
+                        # Get a list of all profiles (views) for this property
+                        profiles = service.management().profiles().list(
+                            accountId=account_id,
+                            webPropertyId=property_id).execute()
+
+                        if profiles.get('items'):
+                            profiles_list.extend([
+                                {
+                                    'id': e.get('id'),
+                                    'name': e.get('name')
+                                } for e in profiles.get('items')
+                            ])
 
                         # Get a list of all custom metrics for this property
                         custom_metrics = service.management().customMetrics().list(

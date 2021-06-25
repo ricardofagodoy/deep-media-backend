@@ -11,6 +11,7 @@ class Configuration:
     margin: float
     ga_account: str
     ga_property: str
+    ga_profile: str
     ga_metric: str
     active: bool
     id: str = None
@@ -26,6 +27,7 @@ class Configuration:
             'margin': self.margin,
             'ga_account': self.ga_account,
             'ga_property': self.ga_property,
+            'ga_profile': self.ga_profile,
             'ga_metric': self.ga_metric,
             'active': self.active
         }

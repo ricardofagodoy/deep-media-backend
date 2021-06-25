@@ -5,6 +5,9 @@ from firebase_admin import auth
 from flask import Flask
 from flask_expects_json import expects_json
 from flask import request, jsonify, g
+from google.ads.googleads.errors import GoogleAdsException
+from googleapiclient.errors import HttpError
+
 from connectors.google.google_connector import GoogleConnector
 from models.configuration import Configuration
 from repository.datastore.DatastoreRepository import DatastoreRepository as Repository
@@ -130,6 +133,7 @@ def configuration_delete(configuration_id):
         'margin': {'type': 'number'},
         'ga_account': {'type': 'string'},
         'ga_property': {'type': 'string'},
+        'ga_profile': {'type': 'string'},
         'ga_metric': {'type': 'string'},
         'active': {'type': 'boolean'}
     },
@@ -142,6 +146,7 @@ def configuration_delete(configuration_id):
         'margin',
         'ga_account',
         'ga_property',
+        'ga_profile',
         'ga_metric',
         'active'
     ]
@@ -165,6 +170,16 @@ def after_request(response):
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE')
     return response
+
+
+@app.errorhandler(HttpError)
+def all_exception_handler(error: HttpError):
+    return {'error': [error.get('message') for error in error.error_details]}, 500
+
+
+@app.errorhandler(GoogleAdsException)
+def all_exception_handler(error: GoogleAdsException):
+    return {'error': [error.message for error in error.failure.errors]}, 500
 
 
 if __name__ == "__main__":
