@@ -88,7 +88,10 @@ class GoogleAds:
 
         for customer_resource_name in customer_resource_names:
 
-            customer = customer_service.get_customer(resource_name=customer_resource_name)
+            try:
+                customer = customer_service.get_customer(resource_name=customer_resource_name)
+            except Exception as e:
+                continue
 
             if customer.manager:
                 seed_customer_ids.append(customer.id)
