@@ -98,7 +98,7 @@ class DatastoreRepository(StoreRepository):
             query.add_filter('date', '>=', start_date)
 
         if end_date:
-            query.add_filter('date', '<=', end_date)
+            query.add_filter('date', '<=', end_date.replace(hour=23, minute=59, second=59))
 
         query.order = ["-date"]
 
