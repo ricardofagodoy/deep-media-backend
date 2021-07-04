@@ -3,6 +3,7 @@ import logging
 from datetime import datetime
 
 import firebase_admin
+import pytz
 from firebase_admin import auth
 from flask import Flask
 from flask_expects_json import expects_json
@@ -25,6 +26,8 @@ logging.basicConfig(level=logging.INFO)
 
 # Repository to persist everything
 repository = Repository()
+
+TIMEZONE = timezone(os.environ.get('TIMEZONE'))
 
 # Repository to take care of jobs
 job_repository = JobRepository(
@@ -60,10 +63,10 @@ def performance(configuration_id):
     end_date = request.args.get('end_date')
 
     if start_date:
-        start_date = datetime.strptime(start_date, date_format).astimezone(timezone(os.environ.get('TIMEZONE')))
+        start_date = TIMEZONE.localize(datetime.strptime(start_date, date_format))
 
     if end_date:
-        end_date = datetime.strptime(end_date, date_format).astimezone(timezone(os.environ.get('TIMEZONE')))
+        end_date = TIMEZONE.localize(datetime.strptime(end_date, date_format))
 
     return jsonify(_connector_service.get_performance(configuration_id, g.uid, start_date, end_date))
 
