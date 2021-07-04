@@ -1,8 +1,13 @@
 indexes:
 
 - kind: optimizations
+  properties:
+  - name: configuration_id
+  - name: date
+    direction: desc
+
+- kind: ticks
   ancestor: yes
   properties:
-  - name: campaign_id
   - name: date
     direction: desc

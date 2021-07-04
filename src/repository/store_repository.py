@@ -1,10 +1,10 @@
 from abc import abstractmethod, ABC
 from datetime import datetime
 from typing import List
-
 from models.configuration import Configuration
 from models.connector import Connector
 from models.optimization import Optimization
+from models.tick import Tick
 
 
 class StoreRepository(ABC):
@@ -40,8 +40,16 @@ class StoreRepository(ABC):
     @abstractmethod
     def load_optimizations(self,
                            uid,
-                           start_date=None,
-                           end_date=None,
+                           start_date: datetime = None,
+                           end_date: datetime = None,
                            configuration_id=None,
                            limit=None) -> List[Optimization]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def load_ticks(self, uid,
+                   configuration_id: str,
+                   start_date: datetime = None,
+                   end_date: datetime = None,
+                   limit=None) -> List[Tick]:
         raise NotImplementedError()

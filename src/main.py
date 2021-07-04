@@ -1,5 +1,7 @@
 import os
 import logging
+from datetime import datetime
+
 import firebase_admin
 from firebase_admin import auth
 from flask import Flask
@@ -7,6 +9,7 @@ from flask_expects_json import expects_json
 from flask import request, jsonify, g
 from google.ads.googleads.errors import GoogleAdsException
 from googleapiclient.errors import HttpError
+from pytz import timezone
 
 from connectors.google.google_connector import GoogleConnector
 from models.configuration import Configuration
@@ -48,7 +51,21 @@ _connector_service = ConnectorService(repository,
 
 @app.route("/performance/<configuration_id>")
 def performance(configuration_id):
-    return _connector_service.get_performance(configuration_id, g.uid)
+
+    # Expected date format for this API
+    date_format = '%d/%m/%Y'
+
+    # Filters to pull performance ticks
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+
+    if start_date:
+        start_date = datetime.strptime(start_date, date_format).astimezone(timezone(os.environ.get('TIMEZONE')))
+
+    if end_date:
+        end_date = datetime.strptime(end_date, date_format).astimezone(timezone(os.environ.get('TIMEZONE')))
+
+    return jsonify(_connector_service.get_performance(configuration_id, g.uid, start_date, end_date))
 
 
 @app.route("/optimizations")
@@ -130,7 +147,6 @@ def configuration_delete(configuration_id):
         'ads_account': {'type': 'string'},
         'ads_campaign': {'type': 'string'},
         'adcost_target': {'type': 'number'},
-        'margin': {'type': 'number'},
         'ga_account': {'type': 'string'},
         'ga_property': {'type': 'string'},
         'ga_profile': {'type': 'string'},
@@ -143,7 +159,6 @@ def configuration_delete(configuration_id):
         'ads_account',
         'ads_campaign',
         'adcost_target',
-        'margin',
         'ga_account',
         'ga_property',
         'ga_profile',
@@ -172,11 +187,13 @@ def after_request(response):
     return response
 
 
+# TODO: MOVE TO INNER LAYER
 @app.errorhandler(HttpError)
 def all_exception_handler(error: HttpError):
     return {'error': [error.get('message') for error in error.error_details]}, 500
 
 
+# TODO: MOVE TO INNER LAYER
 @app.errorhandler(GoogleAdsException)
 def all_exception_handler(error: GoogleAdsException):
     return {'error': [error.message for error in error.failure.errors]}, 500

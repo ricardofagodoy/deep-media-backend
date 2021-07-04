@@ -1,6 +1,6 @@
+import logging
 from datetime import datetime, timedelta
 from typing import List, Any
-from pytz import timezone
 from connectors.base_connector import BaseConnector
 from models.configuration import Configuration
 from models.connector import Connector
@@ -96,19 +96,5 @@ class ConnectorService:
             'type': job['type']
         } for job in jobs if job['uid'] == uid]
 
-    def get_performance(self, configuration_id, uid):
-
-        today = datetime.today().astimezone(timezone(DEFAULT_TIMEZONE)).replace(hour=0, minute=0, second=0)
-        yesterday = today - timedelta(days=1)
-
-        optimizations = self.repository.load_optimizations(uid, yesterday, configuration_id=configuration_id)
-
-        # Format today to compare
-        today = Optimization.format_datetime(today)
-
-        return {
-            'today': [o for o in optimizations if o.date >= today],
-            'yeserday': [o for o in optimizations if o.date < today],
-            'week': [],  # Not implemented yet
-            'month': []  # Not implemented yet
-        }
+    def get_performance(self, configuration_id, uid, start_date: datetime = None, end_date: datetime = None):
+        return self.repository.load_ticks(uid, configuration_id, start_date, end_date)

@@ -8,12 +8,12 @@ from repository.job_repository import JobRepository
 
 class SchedulerRepository(JobRepository):
 
-    def __init__(self, project_id: str, location_id: str, timezone: str, optimizers_topic: str, cron: str):
+    def __init__(self, project_id: str, location_id: str, timezone_str: str, optimizers_topic: str, cron: str):
 
         if not all([project_id, location_id, timezone, optimizers_topic, cron]):
             raise Exception('Invalid scheduler configuration.')
 
-        self.timezone = timezone
+        self.timezone_str = timezone_str
         self.cron = cron
         self.optimizers_topic = f"projects/{project_id}/topics/" + optimizers_topic
         self.parent = f"projects/{project_id}/locations/{location_id}"
@@ -29,7 +29,7 @@ class SchedulerRepository(JobRepository):
         )
 
         return [{
-            'next_run': job.schedule_time.astimezone(timezone('America/Sao_Paulo')).strftime('%d/%m/%Y %H:%M'),
+            'next_run': job.schedule_time.astimezone(timezone(self.timezone_str)),
             **json.loads(job.pubsub_target.data)
         } for job in jobs]
 
@@ -45,7 +45,7 @@ class SchedulerRepository(JobRepository):
                 }).encode('utf-8')
             },
             'schedule': self.cron,
-            'time_zone': self.timezone
+            'time_zone': self.timezone_str
         }
 
         try:

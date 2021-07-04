@@ -1,16 +1,10 @@
 from dataclasses import dataclass
 from typing import Any
+from models.base_model import BaseModel
 
 
 @dataclass
-class Connector:
+class Connector(BaseModel):
     type: str
     configuration: Any
     options: Any
-
-    def to_dict(self):
-        return {
-            'type': self.type,
-            'configuration': self.configuration,
-            'options': self.options
-        }
