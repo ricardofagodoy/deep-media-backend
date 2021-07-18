@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import List, Any
 from connectors.base_connector import BaseConnector
 from models.configuration import Configuration
@@ -7,8 +7,7 @@ from models.connector import Connector
 from models.optimization import Optimization
 from repository.job_repository import JobRepository
 from repository.store_repository import StoreRepository
-
-DEFAULT_TIMEZONE = 'America/Sao_Paulo'
+from services.MessageException import MessageException
 
 
 class ConnectorService:
@@ -23,7 +22,7 @@ class ConnectorService:
         connector = self.repository.load_connector(connector_type, uid)
 
         if not connector:
-            raise Exception('Connector %s not configured' % connector_type)
+            raise MessageException('Connector %s not configured' % connector_type)
 
         return connector.options
 
@@ -47,12 +46,12 @@ class ConnectorService:
         connector_handler = self.connectors.get(connector_type)
 
         if not connector_handler:
-            raise Exception('Connector %s not available' % connector_type)
+            raise MessageException('Connector %s not available' % connector_type)
 
         connector = self.repository.load_connector(connector_type, uid)
 
         if not connector:
-            raise Exception('Connector %s not configured' % connector_type)
+            raise MessageException('Connector %s not configured' % connector_type)
 
         # Update options
         connector.options = connector_handler.load_options(connector.configuration)
@@ -64,7 +63,7 @@ class ConnectorService:
         connector_handler = self.connectors.get(connector_type)
 
         if not connector_handler:
-            raise Exception('Connector %s not available' % connector_type)
+            raise MessageException('Connector %s not available' % connector_type)
 
         # Build connector
         connector = connector_handler.build_connector(connector_configuration)

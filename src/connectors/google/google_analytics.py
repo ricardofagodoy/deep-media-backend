@@ -7,6 +7,17 @@ class GoogleAnalytics:
     @staticmethod
     def load_accounts_properties(credentials):
 
+        # TODO: LOAD ALL POSSIBLE OPTIONS FROM
+        # https://developers.google.com/analytics/devguides/reporting/metadata/v3/reference/metadata/columns/list
+        analytics_fields = {
+            'dimensions': [
+                {'id': 'ga:campaign', 'name': 'Campaign'}
+            ],
+            'metrics': [
+                {'id': 'ga:transactionRevenue', 'name': 'Revenue'}
+            ]
+        }
+
         analytics_properties = {}
 
         # Construct service
@@ -63,6 +74,7 @@ class GoogleAnalytics:
                             ])
 
                         # Get a list of all custom metrics for this property
+                        '''
                         custom_metrics = service.management().customMetrics().list(
                             accountId=account_id,
                             webPropertyId=property_id).execute()
@@ -74,5 +86,6 @@ class GoogleAnalytics:
                                     'name': e.get('name')
                                 } for e in custom_metrics.get('items')
                             ])
+                        '''
 
-        return analytics_properties
+        return analytics_properties, analytics_fields

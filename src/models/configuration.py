@@ -13,6 +13,7 @@ class Configuration(BaseModel):
     ga_account: str
     ga_property: str
     ga_profile: str
+    ga_dimension: str
     ga_metric: str
     active: bool
     id: str = uuid.uuid4().hex

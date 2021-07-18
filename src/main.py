@@ -1,21 +1,18 @@
 import os
 import logging
-from datetime import datetime
-
+from time import strftime
 import firebase_admin
-import pytz
+from datetime import datetime
 from firebase_admin import auth
 from flask import Flask
 from flask_expects_json import expects_json
 from flask import request, jsonify, g
-from google.ads.googleads.errors import GoogleAdsException
-from googleapiclient.errors import HttpError
 from pytz import timezone
-
 from connectors.google.google_connector import GoogleConnector
 from models.configuration import Configuration
 from repository.datastore.DatastoreRepository import DatastoreRepository as Repository
 from repository.scheduler.SchedulerRepository import SchedulerRepository as JobRepository
+from services.MessageException import MessageException
 from services.connector_service import ConnectorService
 
 # Flask and Firebase apps initialization
@@ -50,6 +47,11 @@ connectors = [google_connector]
 _connector_service = ConnectorService(repository,
                                       job_repository,
                                       connectors)
+
+
+@app.route("/health")
+def health():
+    return {'status': 'OK'}, 200
 
 
 @app.route("/performance/<configuration_id>")
@@ -105,11 +107,6 @@ def connectors():
     return jsonify(_connector_service.get_user_connectors(g.uid))
 
 
-@app.route("/health")
-def health():
-    return {'status': 'OK'}, 200
-
-
 @app.route("/connectors/<connector_type>")
 def connector_options(connector_type):
     return jsonify(_connector_service.get_connector_options(connector_type, g.uid))
@@ -153,6 +150,7 @@ def configuration_delete(configuration_id):
         'ga_account': {'type': 'string'},
         'ga_property': {'type': 'string'},
         'ga_profile': {'type': 'string'},
+        'ga_dimension': {'type': 'string'},
         'ga_metric': {'type': 'string'},
         'active': {'type': 'boolean'}
     },
@@ -165,6 +163,7 @@ def configuration_delete(configuration_id):
         'ga_account',
         'ga_property',
         'ga_profile',
+        'ga_dimension',
         'ga_metric',
         'active'
     ]
@@ -184,22 +183,32 @@ def token_id_interceptor():
 
 @app.after_request
 def after_request(response):
+
+    timestamp = strftime('[%d/%m/%Y %H:%M]')
+    logging.info('%s %s %s %s %s %s', timestamp,
+                 request.remote_addr,
+                 request.method,
+                 request.scheme,
+                 request.full_path,
+                 response.status)
+
     response.headers.add('Access-Control-Allow-Origin', '*')
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE')
+
     return response
 
 
-# TODO: MOVE TO INNER LAYER
-@app.errorhandler(HttpError)
-def all_exception_handler(error: HttpError):
-    return {'error': [error.get('message') for error in error.error_details]}, 500
+@app.errorhandler(MessageException)
+def message_exception_handler(error: MessageException):
+    logging.error(error, exc_info=True)
+    return {'error': str(error)}, 500
 
 
-# TODO: MOVE TO INNER LAYER
-@app.errorhandler(GoogleAdsException)
-def all_exception_handler(error: GoogleAdsException):
-    return {'error': [error.message for error in error.failure.errors]}, 500
+@app.errorhandler(Exception)
+def all_exception_handler(error: Exception):
+    logging.error(error, exc_info=True)
+    return {'error': 'Internal Error'}, 500
 
 
 if __name__ == "__main__":
