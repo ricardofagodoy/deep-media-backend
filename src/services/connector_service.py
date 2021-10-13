@@ -34,13 +34,6 @@ class ConnectorService:
         # Wipe all connector settings
         self.repository.delete_connector(connector_type, uid)
 
-        # Finally, remove all configurations related to this connector
-        configurations = self.repository.load_configurations(uid)
-
-        for configuration in configurations:
-            if configuration.type == connector_type:
-                self.repository.delete_configuration(configuration.id, uid)
-
     def refresh_connector(self, connector_type, uid):
 
         connector_handler = self.connectors.get(connector_type)

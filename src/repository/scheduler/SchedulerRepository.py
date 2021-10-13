@@ -10,7 +10,7 @@ class SchedulerRepository(JobRepository):
 
     def __init__(self, project_id: str, location_id: str, timezone_str: str, optimizers_topic: str, cron: str):
 
-        if not all([project_id, location_id, timezone, optimizers_topic, cron]):
+        if not all([project_id, location_id, timezone_str, optimizers_topic, cron]):
             raise Exception('Invalid scheduler configuration.')
 
         self.timezone_str = timezone_str

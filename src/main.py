@@ -1,25 +1,37 @@
 import os
 import logging
 from time import strftime
-import firebase_admin
 from datetime import datetime
-from firebase_admin import auth
 from flask import Flask
 from flask_expects_json import expects_json
 from flask import request, jsonify, g
 from pytz import timezone
-from connectors.google.google_connector import GoogleConnector
 from models.configuration import Configuration
-from repository.datastore.DatastoreRepository import DatastoreRepository as Repository
-from repository.scheduler.SchedulerRepository import SchedulerRepository as JobRepository
 from services.MessageException import MessageException
 from services.connector_service import ConnectorService
 
+# Mock imports
+if os.environ.get('MOCK'):
+    print('Importing mocked modules')
+    from connectors.mocks.google_connector import GoogleConnector
+    from repository.mocks.FirebaseAuthenticator import FirebaseAuthenticator as Authenticator
+    from repository.mocks.DatastoreRepository import DatastoreRepository as Repository
+    from repository.mocks.SchedulerRepository import SchedulerRepository as JobRepository
+# Production imports
+else:
+    from connectors.google.google_connector import GoogleConnector
+    from repository.firebase.FirebaseAuthenticator import FirebaseAuthenticator as Authenticator
+    from repository.datastore.DatastoreRepository import DatastoreRepository as Repository
+    from repository.scheduler.SchedulerRepository import SchedulerRepository as JobRepository
+
 # Flask and Firebase apps initialization
 app = Flask(__name__)
-firebase_admin.initialize_app()
 
+# Confiure basic logging to stdout
 logging.basicConfig(level=logging.INFO)
+
+# Authenticator to validate token
+authenticator = Authenticator()
 
 # Repository to persist everything
 repository = Repository()
@@ -176,7 +188,7 @@ def configurations_post():
 def token_id_interceptor():
     if request.method in ['POST', 'GET', 'DELETE', 'PATCH', 'PUT']:
         try:
-            g.uid = auth.verify_id_token(request.headers['Authorization'])['uid']
+            g.uid = authenticator.verify_id_token(request.headers['Authorization'])['uid']
         except Exception:
             return {'status': '401 - Not Authorized'}, 401
 
